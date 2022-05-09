@@ -7,7 +7,7 @@ The dataset in this project corresponds to the responses in the [German General 
 There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable, which is used for examining the performance.
 
 The goal of this project is to train a classification model on this dataset to classify survey responses into one of the financial health categories.
-## Highlight
+## Highlights
 Compelete documentation can be found in the "Supervised Learning.rmd" file
 ### Exploratory Data Analysis
 - Outlier Anaylsis
