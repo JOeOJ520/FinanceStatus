@@ -1,0 +1,387 @@
+---
+title: "Supervised Learning Classification - Statistical Learning on Self-Assessed Health Status"
+author: "Jiazhou Liang"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Background
+This project is an improvement of the final project of the upper-year Statistic course "Statistical Learning - Classification" at the University of Waterloo by Bolun Cui and Joe Liang.
+
+The dataset in this project corresponds to the responses in the German General Social Survey (ALLBUS) between 2005 and 2019. The target variable for machine learning is the last variable "health". It is an ordinal variable with five categories from 1 to 5 and represents the "self-asset financial health" of each survey response.
+
+There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable, which is used for examining the performance.
+
+The goal of this project is to train a classification model on this dataset to classify survey responses into one of the financial health categories. 
+
+## Preprocessing
+### Set Up
+Importing training and testing dataset
+```{r}
+# both datasets can be found on the project Github. The dataset should be in the same 
+# folder as this file for execution or change the below code into the complete path of each dataset
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+```
+Removing the variables with more than 80% missing values
+```{r}
+missing_threshold = 0.8
+train = train[,-grep(TRUE,colSums(is.na(train))/nrow(train) > missing_threshold)]
+```
+Removing person id, interviewer id, and unique id from training data since they have very small correlation with the target variable health
+```{r}
+train = train[,!(colnames(train) %in% c("x1181","uniqueid","personid"))]
+```
+
+### Highlights unusual circumstances from exploratory data analysis  
+```{r}
+hist(train$health, main = "Response Variable Distribution", xlab = "Financial Health Status")
+```
+  
+During data analysis, we found there are two variables with unusual values
+```{r,fig.width=7,fig.height=5,fig.align='center'}
+par(mfrow = c(1, 2))
+plot(sort(train[,"x715"]), ylab = "Working Hours Per Week")
+plot(sort(train[,"x723"]), ylab = "Monthly Net Income")
+```
+```{r}
+train <- train[-c(which(train[,"x715"] > 150)),]
+train <- train[-c(which(train[,"x723"] > 50000)),]
+```
+After we manual divide all the variables into four subsets, each subset represents one of the binary, nominal, ordinal, and numerical variables in the training dataset.
+```{r,echo=FALSE}
+# non-ordinal variable 80-86 213
+default = getOption("warn")
+options(warn = -1)
+numerical = c('year','personid','x22','x23', 'x24', 'x25', 'x26', 'x27', 'x28', 'x29', 'x30', 'x31', 'x32', 'x33', 'x34', 'x35', 'x36', 'x37', 'x38', 'x39', 'x40', 'x41', 'x42', 'x43', 'x44', 'x45', 'x46', 'x47', 'x48', 'x49', 'x50', 'x51', 'x52', 'x53', 'x54', 'x55', 'x56', 'x57', 'x58', 'x59', 'x60', 'x141', 'x142', 'x143', 'x144', 'x145', 'x146', 'x147', 'x236', 'x237', 'x239', 'x240', 'x241', 'x242', 'x243', 'x244', 'x245', 'x246', 'x247', 'x248', 'x249', 'x250', 'x251', 'x252', 'x253', 'x254', 'x255', 'x256', 'x257', 'x258', 'x259', 'x260', 'x261', 'x262', 'x263', 'x264', 'x306', 'x385', 'x386', 'x397', 'x403', 'x405', 'x421', 'x422', 'x423', 'x424', 'x425', 'x426', 'x427', 'x428', 'x429', 'x430', 'x431', 'x432', 'x433', 'x437', 'x438', 'x439', 'x440', 'x441', 'x442', 'x443', 'x445', 'x447', 'x449', 'x451', 'x453', 'x454', 'x455', 'x481', 'x570', 'x572', 'x579', 'x586', 'x597', 'x631', 'x632', 'x633', 'x638', 'x641', 'x642', 'x643', 'x644', 'x645', 'x646', 'x647', 'x648', 'x649', 'x650', 'x651', 'x652', 'x665', 'x666', 'x671', 'x682', 'x683', 'x684', 'x685', 'x691', 'x692', 'x697', 'x700', 'x701', 'x702', 'x708', 'x709', 'x714', 'x715', 'x716', 'x717', 'x719', 'x722', 'x723', 'x724', 'x725', 'x726', 'x727', 'x728', 'x729', 'x730', 'x731', 'x732', 'x733', 'x734', 'x735', 'x736', 'x737', 'x738', 'x739', 'x740', 'x741', 'x742', 'x743', 'x744', 'x745', 'x746', 'x747', 'x748', 'x749', 'x750', 'x751', 'x752', 'x756', 'x757', 'x758', 'x759', 'x760', 'x763', 'x768', 'x769', 'x770', 'x771', 'x772', 'x773', 'x774', 'x775', 'x776', 'x777', 'x778', 'x779', 'x791', 'x792', 'x797', 'x800', 'x801', 'x807', 'x808', 'x809', 'x810', 'x811', 'x812', 'x813', 'x814', 'x815', 'x816', 'x817', 'x818', 'x819', 'x820', 'x821', 'x822', 'x823', 'x825', 'x826', 'x827', 'x828', 'x829', 'x830', 'x831', 'x832', 'x833', 'x834', 'x835', 'x836', 'x837', 'x838', 'x839', 'x840', 'x841', 'x842', 'x845', 'x846', 'x847', 'x850', 'x855', 'x856', 'x857', 'x858', 'x859', 'x860', 'x861', 'x862', 'x863', 'x864', 'x865', 'x866', 'x878', 'x879', 'x884', 'x887', 'x888', 'x894', 'x898', 'x899', 'x900', 'x901', 'x902', 'x903', 'x904', 'x905', 'x906', 'x907', 'x908', 'x909', 'x916', 'x917', 'x925', 'x926', 'x931', 'x932', 'x933', 'x934', 'x935', 'x936', 'x937', 'x938', 'x939', 'x940', 'x941', 'x942', 'x949', 'x950', 'x955', 'x958', 'x959', 'x962', 'x963', 'x964', 'x967', 'x968', 'x969', 'x977', 'x978', 'x979', 'x987', 'x988', 'x989', 'x997', 'x998', 'x999', 'x1007', 'x1008', 'x1009', 'x1017', 'x1018', 'x1019', 'x1026', 'x1027', 'x1028', 'x1035', 'x1036', 'x1037', 'x1038', 'x1040', 'x1042', 'x1043', 'x1049', 'x1050', 'x1056', 'x1057', 'x1063', 'x1064', 'x1070', 'x1071', 'x1077', 'x1078', 'x1084', 'x1085', 'x1090', 'x1091', 'x1096', 'x1097', 'x1102', 'x1103', 'x1112', 'x1113', 'x1114', 'x1125', 'x1126', 'x1127', 'x1130', 'x1131', 'x1134', 'x1140', 'x1141', 'x1142', 'x1143', 'x1144', 'x1145', 'x1146', 'x1147', 'x1148', 'x1149', 'x1150', 'x1151', 'x1152', 'x1154', 'x1156', 'x1158', 'x1159', 'x1160', 'x1161', 'x1162', 'x1179', 'x1181', 'x1185')
+
+yes_no = c('x15', 'x18', 'x19', 'x73', 'x175', 'x227', 'x228', 'x229', 'x230', 'x402', 'x404', 'x406', 'x436', 'x446', 'x448', 'x450', 'x473', 'x475', 'x499', 'x500', 'x501', 'x502', 'x538', 'x563', 'x564', 'x565', 'x566', 'x567', 'x568', 'x569', 'x577', 'x584', 'x591', 'x592', 'x593', 'x594', 'x595', 'x596', 'x609', 'x614', 'x615', 'x616', 'x617', 'x620', 'x658', 'x679', 'x681', 'x718', 'x720', 'x721', 'x755', 'x764', 'x803', 'x806', 'x824', 'x843', 'x844', 'x851', 'x890', 'x961', 'x972', 'x973', 'x982', 'x983', 'x992', 'x993', 'x1002', 'x1003', 'x1012', 'x1013', 'x1022', 'x1030', 'x1045', 'x1046', 'x1052', 'x1053', 'x1059', 'x1060', 'x1066', 'x1067', 'x1073', 'x1074', 'x1080', 'x1081', 'x1083', 'x1087', 'x1093', 'x1098', 'x1100', 'x1101', 'x1104', 'x1106', 'x1115', 'x1116', 'x1117', 'x1136', 'x1155', 'x1167', 'x1171', 'x1174', 'x1177')
+
+non_order = c('x7', 'x8', 'x9', 'x10', 'x11', 'x12', 'x13', 'x16', 'x17', 'x20', 'x21', 'x75', 'x78', 'x79', 'x80', 'x81', 'x82', 'x83', 'x84', 'x85', 'x86', 'x87', 'x148', 'x149', 'x150', 'x164', 'x196', 'x197', 'x198', 'x199', 'x200', 'x213', 'x234', 'x303', 'x304', 'x305', 'x322', 'x323', 'x324', 'x325', 'x326', 'x327', 'x328', 'x329', 'x330', 'x331', 'x332', 'x434', 'x435', 'x444', 'x472', 'x474', 'x476', 'x480', 'x497', 'x498', 'x511', 'x512', 'x513', 'x514', 'x515', 'x516', 'x517', 'x518', 'x519', 'x520', 'x536', 'x537', 'x548', 'x571', 'x573', 'x574', 'x575', 'x576', 'x578', 'x580', 'x581', 'x582', 'x583', 'x585', 'x587', 'x588', 'x589', 'x590', 'x598', 'x599', 'x600', 'x601', 'x602', 'x603', 'x604', 'x605', 'x606', 'x607', 'x608', 'x613', 'x630', 'x634', 'x635', 'x636', 'x637', 'x639', 'x640', 'x653', 'x654', 'x655', 'x656', 'x659', 'x660', 'x661', 'x662', 'x663', 'x664', 'x667', 'x668', 'x669', 'x670', 'x672', 'x673', 'x674', 'x675', 'x676', 'x677', 'x678', 'x680', 'x686', 'x687', 'x688', 'x689', 'x690', 'x693', 'x694', 'x695', 'x696', 'x698', 'x699', 'x703', 'x704', 'x705', 'x706', 'x707', 'x710', 'x711', 'x712', 'x713', 'x753', 'x754', 'x761', 'x762', 'x765', 'x766', 'x767', 'x780', 'x781', 'x782', 'x785', 'x786', 'x787', 'x788', 'x789', 'x790', 'x793', 'x794', 'x795', 'x796', 'x798', 'x799', 'x802', 'x804', 'x805', 'x848', 'x849', 'x852', 'x853', 'x854', 'x867', 'x868', 'x869', 'x872', 'x873', 'x874', 'x875', 'x876', 'x877', 'x880', 'x881', 'x882', 'x883', 'x885', 'x886', 'x889', 'x891', 'x892', 'x893', 'x895', 'x896', 'x897', 'x910', 'x911', 'x912', 'x913', 'x914', 'x915', 'x918', 'x919', 'x920', 'x921', 'x922', 'x923', 'x924', 'x927', 'x928', 'x929', 'x930', 'x943', 'x944', 'x945', 'x946', 'x947', 'x948', 'x951', 'x952', 'x953', 'x954', 'x956', 'x957', 'x960', 'x965', 'x966', 'x970', 'x971', 'x974', 'x975', 'x976', 'x980', 'x981', 'x984', 'x985', 'x986', 'x990', 'x991', 'x994', 'x995', 'x996', 'x1000', 'x1001', 'x1004', 'x1005', 'x1006', 'x1010', 'x1011', 'x1014', 'x1015', 'x1016', 'x1020', 'x1021', 'x1023', 'x1024', 'x1025', 'x1029', 'x1031', 'x1032', 'x1033', 'x1034', 'x1039', 'x1041', 'x1044', 'x1047', 'x1048', 'x1051', 'x1054', 'x1055', 'x1058', 'x1061', 'x1062', 'x1065', 'x1068', 'x1069', 'x1072', 'x1075', 'x1076', 'x1079', 'x1082', 'x1088', 'x1089', 'x1094', 'x1095', 'x1099', 'x1105', 'x1107', 'x1108', 'x1109', 'x1110', 'x1111', 'x1118', 'x1119', 'x1120', 'x1121', 'x1122', 'x1123', 'x1124', 'x1128', 'x1133', 'x1135', 'x1164', 'x1165', 'x1166', 'x1170', 'x1172', 'x1173', 'x1175', 'x1182', 'x1183', 'x1186', 'x1187', 'x1188', 'x1189', 'x1190', 'x1191', 'x1192', 'x1193', 'x1194', 'x1195', 'x1196', 'x1197', 'x1198', 'x1199', 'x1200', 'x1201', 'x1202')
+
+order = c('x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x14', 'x61', 'x62', 'x63', 'x64', 'x65', 'x66', 'x67', 'x68', 'x69', 'x70', 'x71', 'x72', 'x74', 'x76', 'x77', 'x88', 'x89', 'x90', 'x91', 'x92', 'x93', 'x94', 'x95', 'x96', 'x97', 'x98', 'x99', 'x100', 'x101', 'x102', 'x103', 'x104', 'x105', 'x106', 'x107', 'x108', 'x109', 'x110', 'x111', 'x112', 'x113', 'x114', 'x115', 'x116', 'x117', 'x118', 'x119', 'x120', 'x121', 'x122', 'x123', 'x124', 'x125', 'x126', 'x127', 'x128', 'x129', 'x130', 'x131', 'x132', 'x133', 'x134', 'x135', 'x136', 'x137', 'x138', 'x139', 'x140', 'x151', 'x152', 'x153', 'x154', 'x155', 'x156', 'x157', 'x158', 'x159', 'x160', 'x161', 'x162', 'x163', 'x165', 'x166', 'x167', 'x168', 'x169', 'x170', 'x171', 'x172', 'x173', 'x174', 'x176', 'x177', 'x178', 'x179', 'x180', 'x181', 'x182', 'x183', 'x184', 'x185', 'x186', 'x187', 'x188', 'x189', 'x190', 'x191', 'x192', 'x193', 'x194', 'x195', 'x201', 'x202', 'x203', 'x204', 'x205', 'x206', 'x207', 'x208', 'x209', 'x210', 'x211', 'x212', 'x214', 'x215', 'x216', 'x217', 'x218', 'x219', 'x220', 'x221', 'x222', 'x223', 'x224', 'x225', 'x226', 'x231', 'x232', 'x233', 'x235', 'x238', 'x265', 'x266', 'x267', 'x268', 'x269', 'x270', 'x271', 'x272', 'x273', 'x274', 'x275', 'x276', 'x277', 'x278', 'x279', 'x280', 'x281', 'x282', 'x283', 'x284', 'x285', 'x286', 'x287', 'x288', 'x289', 'x290', 'x291', 'x292', 'x293', 'x294', 'x295', 'x296', 'x297', 'x298', 'x299', 'x300', 'x301', 'x302', 'x307', 'x308', 'x309', 'x310', 'x311', 'x312', 'x313', 'x314', 'x315', 'x316', 'x317', 'x318', 'x319', 'x320', 'x321', 'x333', 'x334', 'x335', 'x336', 'x337', 'x338', 'x339', 'x340', 'x341', 'x342', 'x343', 'x344', 'x345', 'x346', 'x347', 'x348', 'x349', 'x350', 'x351', 'x352', 'x353', 'x354', 'x355', 'x356', 'x357', 'x358', 'x359', 'x360', 'x361', 'x362', 'x363', 'x364', 'x365', 'x366', 'x367', 'x368', 'x369', 'x370', 'x371', 'x372', 'x373', 'x374', 'x375', 'x376', 'x377', 'x378', 'x379', 'x380', 'x381', 'x382', 'x383', 'x384', 'x387', 'x388', 'x389', 'x390', 'x391', 'x392', 'x393', 'x394', 'x395', 'x396', 'x398', 'x399', 'x400', 'x401', 'x407', 'health', 'x408', 'x409', 'x410', 'x411', 'x412', 'x413', 'x414', 'x415', 'x416', 'x417', 'x418', 'x419', 'x420', 'x452', 'x456', 'x457', 'x458', 'x459', 'x460', 'x461', 'x462', 'x463', 'x464', 'x465', 'x466', 'x467', 'x468', 'x469', 'x470', 'x471', 'x477', 'x478', 'x479', 'x482', 'x483', 'x484', 'x485', 'x486', 'x487', 'x488', 'x489', 'x490', 'x491', 'x492', 'x493', 'x494', 'x495', 'x496', 'x503', 'x504', 'x505', 'x506', 'x507', 'x508', 'x509', 'x510', 'x521', 'x522', 'x523', 'x524', 'x525', 'x526', 'x527', 'x528', 'x529', 'x530', 'x531', 'x532', 'x533', 'x534', 'x535', 'x539', 'x540', 'x541', 'x542', 'x543', 'x544', 'x545', 'x546', 'x547', 'x549', 'x550', 'x551', 'x552', 'x553', 'x554', 'x555', 'x556', 'x557', 'x558', 'x559', 'x560', 'x561', 'x562', 'x610', 'x611', 'x612', 'x618', 'x619', 'x621', 'x622', 'x623', 'x624', 'x625', 'x626', 'x627', 'x628', 'x629', 'x657', 'x783', 'x784', 'x870', 'x871', 'x1086', 'x1092', 'x1129', 'x1132', 'x1137', 'x1138', 'x1139', 'x1153', 'x1157', 'x1163', 'x1168', 'x1169', 'x1176', 'x1178', 'x1180', 'x1184', 'x1203', 'x1204', 'x1205')
+
+head(as.data.frame(cbind(numerical,yes_no,order,non_order)))
+
+options(warn=default)
+``` 
+The pie chart represent the type of variables in the dataset
+```{r,fig.align='center'}
+slice = c(length(order),length(non_order),length(yes_no), length(numerical))
+label = c("Ordinal","Nominal","Binary","Numerical")
+pie(slice,labels = label, main = "Type of Variables in the dataset")
+```
+  
+### Handling categorical and ordinal variables  
+Before converting all categorical and ordinal variables into factors, we merge the training and testing dataset to ensure they are encoded with the same levels
+```{r}
+# Making sure the testing dataset has the same columns as the training dataset
+test <-test[,(colnames(test) %in% colnames(train))]
+# Ensuring both datasets has same dimension for merging
+fake_health = rep(NA,length(test[,1]))
+test$health = fake_health
+# Merging
+total = rbind(test,train)
+```
+Factoring categorical and ordinal variables
+```{r}
+# factorize ordinal variable
+for (names in order){
+  if (names %in% colnames(total)){
+total[,names] = factor(total[,names],order=TRUE)
+}
+}
+# factorize non-ordinal variables
+for (names in c(non_order)){
+  if (names %in% colnames(total)){
+total[,names] = factor(total[,names])
+}
+}
+# factorize binary variables
+for (names in c(yes_no)){
+  if (names %in% colnames(total)){
+total[,names] = factor(total[,names])
+}
+}
+
+for (names in numerical){
+  if (names %in% colnames(total)){
+total[,names] = scale(total[,names])
+}
+}
+
+```
+Restoring training and testing data from merging
+```{r}
+test_factorized = total[c(1:nrow(test)),-c(length(total))]
+train_factorized = total[c((nrow(test)+1):length(total[,1])),]
+```
+Since we want to perform classification, factorizing "health" into ordinal variables
+```{r}
+train_factorized$health <- factor(train_factorized$health, order = TRUE)
+```
+  
+### Missing value
+Using mode to impute categorical variables and median to impute numerical variables. We also try several other imputing methods, for example, the MissForest. It uses a random forest algorithm to predict the missing value based on other information. However, there is no significant improvement of performance. But it has a much higher computational cost than imputing by median and mode.
+```{r}
+library(randomForest)
+train_imputed = na.roughfix(train_factorized)
+test_imputed = na.roughfix(test_factorized)
+```
+
+## Feature Engineering
+During analysis, based on our domain knowledge, we derived a new x-variable. The first one is the average living space in $m^2$ per person in the household. This variable is derived by the ratio of living space in $m^2$ "x1134" and number of person in the household "x963".
+```{r}
+train_imputed$average_space = train_imputed[,"x1134"]/train_imputed[,"x963"]
+test_imputed$average_space = test_imputed[,"x1134"]/test_imputed[,"x963"]
+```
+
+
+## Modeling
+Splitting the train dataset into training data and validation data for tuning and stacking in further sections. The validation dataset will be used to test the performance of the model and prevents overfitting.
+```{r}
+library(caret)
+set.seed(20288122)
+trainIndex <- createDataPartition(train_imputed$health, p = .8, list = FALSE, times = 1)
+validation_imputed <- train_imputed[-trainIndex,]
+train_imputed <- train_imputed[trainIndex,]
+```
+There will be three different modelling techniques in this project, which are random forest, gradient boosting, and feed-forward neural network. We will tune the parameter for each model and test the performance using validation data with cross-entropy as the metric.
+
+### Random Forest
+If a variable has more than 53 categories, there will be more than $2^{53} – 2$ choices for the Random Forest algorithm in corresponding splits. This is an infeasible Computational Cost. Therefore, we decide to remove all the categorical variables with more 53 level.
+```{r}
+morethan53_categories = c()
+for (names in c(order,non_order)){
+  if (names %in% colnames(train_imputed)){
+    if (length(levels(train_imputed[,names])) > 53){
+       morethan53_categories=c(morethan53_categories,names)
+       }
+    }
+}
+train_rf = train_imputed[,!(colnames(train_imputed) %in% morethan53_categories)]
+validation_rf = validation_imputed[,!(colnames(validation_imputed) %in% morethan53_categories)]
+test_rf = test_imputed[,!(colnames(test_imputed) %in% morethan53_categories)]
+```
+Since lower number of variables to choose from at each split will make resulted tree unreliable (high bias). But higher number will also cause overfitting (high variance). Therefore, we need to tune this number with validation dataset to find the balance of bias-variance trade-off.
+```{r, eval=FALSE}
+set.seed(2022)
+bestMtry <- tuneRF(train_rf[,-c(ncol(train_rf)-1)],train_rf$health,
+                   mtryStart = sqrt(ncol(train_rf)),stepFactor = 1.5, 
+                   improve = 1e-5, ntree = 100)
+```
+Then, applying the Random Forest algorithm with above mtry and ntree = 2000
+```{r, eval=FALSE}
+set.seed(2022)
+rf_model <- randomForest(health~.,train_rf, mtry = 49, ntree = 10, importance=TRUE,do.trace=TRUE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Examining the performance using validation dataset
+```{r, eval=FALSE}
+pred_rf <- predict(rf_model,validation_rf, type = 'prob')
+```
+Checking the cross entropy of the validation dataset
+```{r, eval=FALSE}
+result = c()
+pred_rf[pred_rf == 0] = 0.0000000000001
+for (i in c(1:length(validation_imputed$health))){
+result = c(result,log(pred_rf[i,as.integer(validation_imputed$health[i])]))
+}
+-mean(result)
+```
+
+### Nerual Network  
+Producing indicator variables for categorical variables
+```{r}
+library(fastDummies)
+default = getOption("warn")
+options(warn = -1)
+train_transformed = dummy_cols(train_imputed[-c(length(train_imputed)-1)],
+                           select_columns = c(order,non_order,yes_no), 
+                           remove_selected_columns = TRUE)
+validation_transformed = dummy_cols(validation_imputed[-c(length(validation_imputed)-1)],
+                           select_columns = c(order,non_order,yes_no), 
+                           remove_selected_columns = TRUE)
+test_transformed = dummy_cols(test_imputed,
+                           select_columns = c(order,non_order,yes_no), 
+                           remove_selected_columns = TRUE)
+options(warn=default)
+```
+Preprocessing the data frame for neural network model
+```{r}
+library(keras)
+train_neural = as.matrix(train_transformed)
+validation_neural = as.matrix(validation_transformed)
+test_neural = as.matrix(test_transformed)
+train.y = to_categorical(as.numeric(train_imputed$health)-1)
+colnames(train_neural) <- NULL
+colnames(test_neural) <- NULL
+```
+Performing a neural network model with two hidden layers, each has 128 and 256 neurals
+```{r}
+set.seed(202122)
+checkpoint_path <- "checkpoints/cp.ckpt"
+cp_callback <- callback_model_checkpoint(
+  filepath = checkpoint_path,
+  save_weights_only = TRUE,
+  save_best_only = TRUE,
+  verbose = 0
+)
+inputshape = ncol(train_neural)
+model <-keras_model_sequential()%>%
+  layer_dense(units = 128, activation = "relu", input_shape =c(inputshape))%>%
+  layer_dropout(rate = 0.2) %>%
+  layer_dense(units = 256, activation = "relu")%>%
+  layer_dropout(rate = 0.2) %>%
+  layer_dense(units = 5, activation = "softmax")
+model %>%
+  compile(optimizer = optimizer_adam(lr = 0.001), loss = "categorical_crossentropy") 
+model %>%
+  fit(train_neural, train.y, epochs =  5, batch_size = 32, validation_split = 0.2,
+      callbacks = list(cp_callback))
+
+model %>% load_model_weights_tf(filepath = checkpoint_path) 
+
+```
+We used Checkpoint function to save the model with lowest validation cross entropy during model Training. Then Examining the performance using our own validation dataset with cross entropy
+```{r, eval=FALSE}
+result = c()
+pred_nerual[pred_nerual == 0] = 0.0000000000001
+for (i in c(1:length(validation_imputed$health))){
+result = c(result,log(pred_nerual[i,as.integer(validation_imputed$health[i])]))
+}
+-mean(result)
+```
+
+### Generalized Boosting Model  
+Remove all variables that has more than 53 categories for boosting algorithm.
+```{r}
+train_gbm = train_imputed[,!(colnames(train_imputed) %in% morethan53_categories)]
+validation_gbm = validation_imputed[,(colnames(validation_imputed) 
+                                      %in% colnames(train_gbm))]
+test_gbm = test_imputed[,(colnames(test_imputed) %in% colnames(train_gbm))]
+```
+
+Tuning the maximum depth of each tree
+```{r, eval=FALSE}
+library(gbm)
+depth = c(1,3,5,7,10)
+error = c()
+for (i in depth){
+model_gbm <- gbm(health~., data = train_gbm, distribution = "multinomial",
+                 n.trees = 200,shrinkage = 0.03, n.cores = 3,
+                 interaction.depth = i,verbose = TRUE)
+pred = predict(model_gbm,validation_gbm[,-c(length(validation_gbm)-1)],type = "response")
+pred = matrix(unlist(pred), ncol = 5)
+
+result = c()
+pred[pred == 0] = 0.0000000000001
+for (i in c(1:length(validation_gbm$health))){
+result = c(result,log(pred[i,as.integer(validation_gbm$health[i])]))
+}
+
+error = c(error,-mean(result))
+}
+error
+```
+
+We can see that when the maximum depth of tree is 3, the validation error is smallest. Therefore, we choose maximum depth of tree to be 3 and fit the boosting model.
+```{r}
+library(gbm)
+model_gbm <- gbm(health~., data = train_gbm, distribution = "multinomial",
+                 n.trees = 20,shrinkage = 0.03, n.cores = 3,interaction.depth = 3,verbose = TRUE)
+```
+Now let's predict the validation set.
+```{r, eval=FALSE}
+pred_gbm = predict(model_gbm,validation_gbm[,-c(length(validation_imputed)-1)],type = "response")
+pred_gbm = matrix(unlist(pred_gbm), ncol = 5)
+
+result = c()
+pred_gbm[pred_gbm == 0] = 0.0000000000001
+for (i in c(1:length(validation_imputed$health))){
+result = c(result,log(pred_gbm[i,as.integer(validation_imputed$health[i])]))
+}
+-mean(result)
+```
+
+## Stacking
+Combing the validation prediction results from above three models as base learners (RandomForest, Gbm, and Neural Network)
+```{r, eval=FALSE}
+train_stack = as.data.frame(cbind(pred_rf,pred_gbm,pred_nerual,validation_imputed$health))
+colnames(train_stack) <- c('rf1','rf2','rf3','rf4','rf5',
+                          'gbm1','gbm2','gbm3','gbm4','gbm5',
+                          'n1','n2','n3','n4','n5','health')
+```
+Training the Multinomial logistic regression model for stacking
+```{r, eval=FALSE}
+library(nnet)
+multinom_model <- multinom(health~ ., data = train_stack)
+```
+re-training the base models using entire dataset (training and validation) and predicting test data
+### Random Forest
+```{r, eval=FALSE}
+pred_test_rf <- predict(rf_model_all,test_rf, type = 'prob',importance = TRUE)
+```
+### Neural Network
+```{r, eval=FALSE}
+validation.y = to_categorical(as.numeric(validation_imputed$health)-1)
+model %>%
+  fit(rbind(train_neural,validation_neural), rbind(train.y,validation.y), 
+      epochs =  5, batch_size = 32, validation_split = 0.2,
+      callbacks = list(cp_callback))
+model %>% load_model_weights_tf(filepath = checkpoint_path) 
+pred_test_nerual = model %>% predict(test_neural)
+```
+### GBM
+```{r, eval=FALSE}
+model_gbm_all <- gbm(health~., data = rbind(train_gbm,validation_gbm),
+                 distribution = "multinomial",
+                 n.trees = 200,shrinkage = 0.03, n.cores = 3,
+                 interaction.depth = 3,verbose = TRUE)
+pred_test_gbm = predict(model_gbm_all,test_gbm,type = "response")
+pred_test_gbm = matrix(unlist(pred_test_gbm), ncol = 5)
+```
+Combining the results and predicting the testing dataset using stacking model
+```{r, eval=FALSE}
+test_stack = as.data.frame(cbind(pred_test_rf,pred_test_nerual,pred_test_gbm))
+colnames(test_stack) <- c('rf1','rf2','rf3','rf4','rf5',
+                          'gbm1','gbm2','gbm3','gbm4','gbm5',
+                                          'n1','n2','n3','n4','n5')
+pred = predict(multinom_model,test_stack,type = "probs")
+```
+
+## Conclusion
+The performance of different models in validation dataset and test set from the Kaggle submission
+```{r}
+validation_cross = c(1.1823,1.1903,1.1799,NA)
+kaggle_cross = c(1.2083,1.2133,1.2157,1.1932)
+names = c('Random Forest','Boosting','Nerual','stacking')
+plot(kaggle_cross, ylim = c(1.17,1.22),type = 'b',xaxt = "n",
+     xlab = "Model",ylab = "Cross Entropy",
+     main = "Cross Entropy in Different Model and Dataset")
+axis(1, at=c(1,2,3,4), labels=names)
+points(validation_cross, col = 'blue',type = 'b')
+legend(3.4,1.22,legend=c("Kaggle Test Set", "Validation Set"),
+       col=c("black","blue"), lty=1:1,cex = 0.7 )
+```
+
+
+
+
