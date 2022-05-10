@@ -1,40 +1,48 @@
 # Supervised Learning Classification - Statistical Learning on Self-Assessed Health Status
 ## Disclaimer
-This project is an improvement of the final project of the upper-year Statistic course "Statistical Learning - Classification" at the University of Waterloo by Bolun Cui and Joe Liang.
+This project is an improvement of the final project of the upper-year Statistic course "Statistical Learning - Classification" at the University of Waterloo by Bolun Cui and Joe Liang. 
+## Video
+A video explaination about this project can be found [here](https://youtu.be/LncR2eTuaW8). (Note: The video was made for the university course project, some parts in the video might not be matched with the file)
 ## Background
 The dataset in this project corresponds to the responses in the [German General Social Survey (ALLBUS)](https://www.gesis.org/en/allbus/allbus-home/general-information) between 2005 and 2019. The target variable for machine learning is the last variable "health". It is an ordinal variable with five categories from 1 to 5 and represents the "self-asset financial health" of each survey response.
 
 There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable, which is used for examining the performance.
 
 The goal of this project is to train a classification model on this dataset to classify survey responses into one of the financial health categories.
+## File Description
+- Supervised Learning Code.Rmd: Contains codes and documentations for machine learning training and data anayalsis. Highlights can be found in the next section
+- Supervised Learning Report.pdf: PDF version of "Supervised Learning Code.rmd" for better compatibility
+- test.csv: Testing dataset for machine learning
+- train.csv: Training dataset for machine learning
+- Final Presentation.pdf: Contain the summary and explaination of training process and the outcome of this project. A video explaination about this project can be found [here](https://youtu.be/LncR2eTuaW8). (Note: The video was made for the university course project, some parts in the video might not be matched with the file)
 ## Highlights
-Compelete documentation can be found in the "Supervised Learning.rmd" file
+Compelete documentation can be found in the "Supervised Learning code.rmd" file
 ### Exploratory Data Analysis
-- Outlier Anaylsis
+- Outlier anaylsis
 
 ![Screen Shot 2022-05-09 at 6 39 19 PM](https://user-images.githubusercontent.com/50597009/167510234-a40d0857-18ba-49ab-9211-a77439907923.png)
-- Target variables Distribution anaylsis and normalization
+- Target variables distribution anaylsis and normalization
 
 ![Screen Shot 2022-05-09 at 6 43 30 PM](https://user-images.githubusercontent.com/50597009/167510495-4e9d4185-cff5-4c59-8182-0ef97cfe02a8.png)
 ### Feature Engineering
 During analysis, based on our domain knowledge, we derived a new x-variable: the average living space in m2 per person in the household.
 ### Random Foresting
-- Out of Bag (OOB) samples Tuning for number of variables to choice and number of trees
+- Out of Bag (OOB) samples tuning for number of variables to choice and number of trees
 
 ![Screen Shot 2022-05-09 at 6 59 31 PM](https://user-images.githubusercontent.com/50597009/167512133-90c355a2-6c07-428c-a0f7-16f52dadebda.png)
-- Importance of variables from OOB (Randomly mix each variables to test the decrease in accuracy)
+- Importance of variables from OOB (randomly mix each variables to test the decrease in accuracy)
 
 ![image](https://user-images.githubusercontent.com/50597009/167512382-42b851ae-18c9-4aed-aecd-d52827a579c1.png)
 - Tracing the perfomance of different number of trees
 
 ![ezgif-5-6cdd33b368](https://user-images.githubusercontent.com/50597009/167513470-1775942b-3a12-40d8-a8e1-b487fae8f6c3.gif)
 
-### Nerual Network
-- Pipline implentation of two hidden layer network
+### Neural Network
+- Pipline implentation of two hidden layers neural network
 
 ![pip](https://user-images.githubusercontent.com/50597009/167514019-340214b8-ed37-49ac-b301-653565b66ac0.gif)
 
-- Tuning Epochs (Number of iteration) to balance bias and vairance tradeoff
+- Tuning Epochs (number of iteration) to balance bias and vairance tradeoff
 
 ![neural](https://user-images.githubusercontent.com/50597009/167511333-45ce2f77-87f2-42df-a84e-372223eaca53.gif)
 - Number Nodes and Layer tuning with validation cross entropy
