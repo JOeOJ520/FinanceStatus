@@ -8,7 +8,7 @@ The dataset in this project corresponds to the responses in the [German General 
 
 There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable. The goal of this project is to train a classification model using the "train.csv" to classify survey responses in "test.csv" into one of the financial health categories.
 ## File Description
-- Supervised Learning Code.Rmd: Contains codes and documentations for machine learning training and data anayalsis. Highlights can be found in the next section
+- Supervised Learning Code.Rmd: Contains codes and documentation for machine learning training and data analysis. Highlights can be found in the next section
 - Supervised Learning Report.pdf: PDF version of "Supervised Learning Code.rmd" for better compatibility
 - test.csv: Testing dataset for machine learning
 - train.csv: Training dataset for machine learning
