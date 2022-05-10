@@ -6,9 +6,7 @@ A video explaination about this project can be found [here](https://youtu.be/Lnc
 ## Background
 The dataset in this project corresponds to the responses in the [German General Social Survey (ALLBUS)](https://www.gesis.org/en/allbus/allbus-home/general-information) between 2005 and 2019. The target variable for machine learning is the last variable "health". It is an ordinal variable with five categories from 1 to 5 and represents the "self-asset financial health" of each survey response.
 
-There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable, which is used for examining the performance.
-
-The goal of this project is to train a classification model on this dataset to classify survey responses into one of the financial health categories.
+There are two parts of the dataset, ”train.csv" and "test.csv". the samples in ”train.csv" include "health" variables, which are used for model training. And "test.csv" does not have the "health" variable. The goal of this project is to train a classification model using the "train.csv" to classify survey responses in "test.csv" into one of the financial health categories.
 ## File Description
 - Supervised Learning Code.Rmd: Contains codes and documentations for machine learning training and data anayalsis. Highlights can be found in the next section
 - Supervised Learning Report.pdf: PDF version of "Supervised Learning Code.rmd" for better compatibility
