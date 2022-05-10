@@ -1,4 +1,4 @@
-# Supervised Learning Classification - Statistical Learning on Self-Assessed Health Status
+# Supervised Learning Classification - Self-Assessed Health Status
 ## Disclaimer
 This project is an improvement of the final project of the upper-year Statistic course "Statistical Learning - Classification" at the University of Waterloo by Bolun Cui and Joe Liang. 
 ## Video
